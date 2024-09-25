@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Book Library</title>
+    
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: brown;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: chartreuse;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .search-bar {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .search-bar input, .search-bar select, .add-book input {
+            padding: 8px;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .add-book {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Personal Book Library</h1>
+
+        <div class="search-bar">
+            <input type="text" id="search" placeholder="Search by title...">
+            <select id="category">
+                <option value="">All Categories</option>
+                <option value="Fiction">Fiction</option>
+                <option value="Non-fiction">Non-fiction</option>
+            </select>
+            <button id="searchBtn">Search</button>
+        </div>
+
+       
+        <ul id="book-list"></ul>
+
+       
+        <div class="add-book">
+            <h3>Add New Book</h3>
+            <input type="text" id="newTitle" placeholder="Title">
+            <input type="text" id="newAuthor" placeholder="Author">
+            <input type="text" id="newCategory" placeholder="Category">
+            <button id="addBookBtn">Add Book</button>
+        </div>
+    </div>
+
+   
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const bookList = document.getElementById('book-list');
+            const searchBtn = document.getElementById('searchBtn');
+            const addBookBtn = document.getElementById('addBookBtn');
+
+           
+            const fetchBooks = async (search = '', category = '') => {
+                let url = `/api/books?search=${search}&category=${category}`;
+                const response = await fetch(url);
+                const books = await response.json();
+                bookList.innerHTML = '';
+
+                books.forEach(book => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <h3>${book.title}</h3>
+                        <p>Author: ${book.author}</p>
+                        <p>Category: ${book.category}</p>
+                        <p>Status: ${book.status}</p>
+                        ${book.status === 'available' ? `<button onclick="borrowBook('${book._id}')">Borrow</button>` : ''}
+                    `;
+                    bookList.appendChild(li);
+                });
+            };
+
+           
+            window.borrowBook = async (bookId) => {
+                const response = await fetch(`/api/borrow/${bookId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId: 'user123' }),
+                });
+                const data = await response.json();
+                alert(data.message);
+                fetchBooks();
+            };
+
+            
+            searchBtn.addEventListener('click', () => {
+                const search = document.getElementById('search').value;
+                const category = document.getElementById('category').value;
+                fetchBooks(search, category);
+            });
+
+            
+            addBookBtn.addEventListener('click', async () => {
+                const title = document.getElementById('newTitle').value;
+                const author = document.getElementById('newAuthor').value;
+                const category = document.getElementById('newCategory').value;
+
+                const response = await fetch('/api/books', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ title, author, category }),
+                });
+                const newBook = await response.json();
+                alert('Book added successfully!');
+                fetchBooks();
+            });
+
+            
+            fetchBooks();
+        });
+    </script>
+</body>
+</html>
